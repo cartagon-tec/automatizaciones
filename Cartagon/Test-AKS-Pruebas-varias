@@ -55,14 +55,14 @@ az network application-gateway identity assign \
 az network application-gateway identity show -g $resgpaks --gateway-name $appgwName
 
 
-# Asignamos la politica que el usuario puede tener el permiso get
+#Asignamos la politica que el usuario puede tener el permiso get
 az keyvault set-policy \
 -n $vaultName \
 -g $resgp \
 --object-id $identityPrincipal \
 --secret-permissions get
 
-# Por cada nuevo certificado, Creamos un certificado 
+#Por cada nuevo certificado, Creamos un certificado 
 az keyvault certificate create \
 --vault-name $vaultName \
 -n mycert \
@@ -76,3 +76,6 @@ az network application-gateway ssl-cert create \
 --gateway-name $appgwName \
 --resource-group $resgpaks \
 --key-vault-secret-id $unversionedSecretId 
+
+#Ver los certificados que tiene el appgateway
+az network application-gateway ssl-cert list -g $resgpaks --gateway-name $appgwName
