@@ -1,0 +1,7 @@
+az network vnet create -g avc-test -n vnet-druid-test --address-prefix 10.132.32.0/22
+
+az network vnet subnet create -g avc-test  --vnet-name vnet-druid-test -n test-aks --address-prefixes 10.132.32.0/23
+
+az network vnet subnet create -g avc-test  --vnet-name vnet-druid-test -n test-mongodb --address-prefixes 10.132.34.0/28
+
+

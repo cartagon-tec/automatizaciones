@@ -1,0 +1,49 @@
+az network vnet subnet show -g Desarrollo -n main-aks-subnet --vnet-name vnet-druid-identity
+
+/subscriptions/f759848d-a834-4c1c-9b97-49070e1a331d/resourceGroups/Desarrollo/providers/Microsoft.Network/virtualNetworks/vnet-DruID-identity/subnets/main-aks-subnet
+
+
+az aks create \
+	--resource-group desarrollo \
+	--name aks-druid-eu-id \
+	--load-balancer-sku standard \
+	--network-plugin azure \
+	--generate-ssh-keys \
+	--node-count 2 \
+	--node-vm-size Standard_D4s_v3 \
+	--vnet-subnet-id  /subscriptions/f759848d-a834-4c1c-9b97-49070e1a331d/resourceGroups/Desarrollo/providers/Microsoft.Network/virtualNetworks/vnet-DruID-identity/subnets/main-aks-subnet \
+    --enable-managed-identity 
+    -a ingress-appgw --appgw-name appgw-druid-us-aksgw \
+	--appgw-subnet-cidr “10.66.1.16/28”
+
+	
+az aks enable-addons --addons azure-keyvault-secrets-provider --resource-group desarrollo --name aks-druid-eu-id
+az aks update --enable-secret-rotation --resource-group desarrollo --name aks-druid-eu-id  
+
+
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "ACTIVEMQ-ADMIN-LOGIN" --value "admin"
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "ACTIVEMQ-ADMIN-PASSWORD" --value "admin_WezAh5wKFNR9n"
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "ACTIVEMQ-READ-LOGIN" --value "consumer_login"
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "ACTIVEMQ-READ-PASSWORD" --value "consumer_43BVe9aXBuRyk5bC"
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "ACTIVEMQ-WRITE-LOGIN" --value "producer_login"
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "ACTIVEMQ-WRITE-PASSWORD" --value "producer_KNnMDvdd5KL5r7zS"
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "DB-USER" --value "idqa@sqldevironia"
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "DB-URL" --value "jdbc:sqlserver://sqldevironia.privatelink.database.windows.net:1433;database=druidq;user=idqa@sqldevironia;password=K4l1m3r0;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;"
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "DB-PWD" --value "K4l1m3r0"
+
+az keyvault secret set --vault-name "kv-druid-eu-ironia" --name "REWARDS-PASSWORD" --value "fn8F0dgetNPwp7f7HhA7MOjIVWNI1s"
+
+az account set --subscriptionaz de049fa5-3952-4751-a9fc-5752e2895dda
+
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "ACTIVEMQ-ADMIN-LOGIN"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "ACTIVEMQ-ADMIN-PASSWORD"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "ACTIVEMQ-READ-LOGIN"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "ACTIVEMQ-READ-PASSWORD"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "ACTIVEMQ-WRITE-LOGIN"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "ACTIVEMQ-WRITE-PASSWORD"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "PMS-CLIENT-SECRET"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "PULSE-MONGO-URI"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "REWARDS-PASSWORD"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "DB-USER"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "DB-PWD"  --query "value"
+az keyvault secret show --vault-name "prod-kv-druid-eu-mainkv" --name "DB-URL"  --query "value"

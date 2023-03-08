@@ -1,0 +1,78 @@
+az keyvault create -n druid-eu-mainkv-avc  -g aks-test 
+
+az network vnet subnet show -g aks-test -n subnet-main-aks --vnet-name vnet-avc-aks-test
+
+/subscriptions/086123b5-c7ae-4055-8100-578c98be0ed1/resourceGroups/aks-test/providers/Microsoft.Network/virtualNetworks/vnet-avc-aks-test/subnets/subnet-main-aks
+
+az aks create \
+	--resource-group aks-test \
+	--name aks-druid-eu-test-avc \
+	--load-balancer-sku standard \
+	--network-plugin azure \
+	--generate-ssh-keys \
+	--node-count 1 \
+	--node-vm-size Standard_D4s_v3 \
+	--vnet-subnet-id /subscriptions/086123b5-c7ae-4055-8100-578c98be0ed1/resourceGroups/aks-test/providers/Microsoft.Network/virtualNetworks/vnet-avc-aks-test/subnets/subnet-main-aks \
+	--enable-managed-identity 
+
+
+az aks enable-addons --addons azure-keyvault-secrets-provider --resource-group aks-test  --name aks-druid-eu-test-avc
+az aks update --enable-secret-rotation --resource-group aks-test --name aks-druid-eu-test-avc
+
+
+
+# Configuramos las variables
+identityName="ingressapplicationgateway-aks-druid-eu-test-avc"
+appgwName="ingress-appgateway"
+resgp="aks-test"
+resgpaks="MC_aks-test_aks-druid-eu-test-avc_westeurope"
+vaultName="druid-eu-mainkv-avc"
+location="westeurope"
+agicIdentityPrincipalId="ea46aef5-9ab6-42d7-954c-7e325a77b873"
+
+# cogemos el id del usuario agic ingressaplicationgateway+nombrecluster
+agicIdentityPrincipalId=$(az identity show --name $identityName -g $resgpaks --query principalId --output tsv)
+
+# Creamos el key vualt
+az keyvault create -n $vaultName -g $resgp --enable-soft-delete -l $location
+
+# Creamos un usuario asignado
+az identity create -n appgw-id -g $resgp -l $location
+identityID=$(az identity show -n appgw-id -g $resgp -o tsv --query "id")
+identityPrincipal=$(az identity show -n appgw-id -g $resgp -o tsv --query "principalId")
+
+# Le asingamos el role a la identidad necesaria del agic usuario
+az role assignment create --role "Managed Identity Operator" --assignee $agicIdentityPrincipalId --scope $identityID
+
+# Asignamos la nueva identidad a al app gateway
+az network application-gateway identity assign \
+  --gateway-name $appgwName \
+  --resource-group $resgpaks \
+  --identity $identityID
+
+#Vemos que el usuario que hemos creado esta correctamente asginado
+
+az network application-gateway identity show -g $resgpaks --gateway-name $appgwName
+
+
+# Asignamos la politica que el usuario puede tener el permiso get
+az keyvault set-policy \
+-n $vaultName \
+-g $resgp \
+--object-id $identityPrincipal \
+--secret-permissions get
+
+# Por cada nuevo certificado, Creamos un certificado 
+az keyvault certificate create \
+--vault-name $vaultName \
+-n mycert \
+-p "$(az keyvault certificate get-default-policy)"
+versionedSecretId=$(az keyvault certificate show -n mycert --vault-name $vaultName --query "sid" -o tsv)
+unversionedSecretId=$(echo $versionedSecretId | cut -d'/' -f-5) 
+
+# Por cada nuevo certificado lo añadimos al AKS
+az network application-gateway ssl-cert create \
+-n mykvsslcert \
+--gateway-name $appgwName \
+--resource-group $resgpaks \
+--key-vault-secret-id $unversionedSecretId 

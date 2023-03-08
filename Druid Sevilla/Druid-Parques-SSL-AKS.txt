@@ -1,0 +1,40 @@
+az keyvault certificate create \
+--vault-name prod-kv-druid-us-mainkv \
+-n palaceentertainment \
+-p "$(az keyvault certificate get-default-policy)"
+
+versionedSecretId=$(az keyvault certificate show -n palaceentertainment --vault-name prod-kv-druid-us-mainkv --query "sid" -o tsv)
+unversionedSecretId=$(echo $versionedSecretId | cut -d'/' -f-5) 
+
+
+
+az network application-gateway ssl-cert create \
+-n cert-palaceentertainment \
+--gateway-name prod-appgw-druid-us-aksgw \
+--resource-group MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2 \
+--key-vault-secret-id $unversionedSecretId
+
+az account set --subscription 0c55596a-1668-492e-b50d-d040372e8581
+
+Crear el usuario de identidad para conectarse al KEY vault
+
+Se le asigna al appgateway
+
+az network application-gateway identity assign -g MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2 --gateway-name prod-appgw-druid-us-aksgw --identity /subscriptions/0c55596a-1668-492e-b50d-d040372e8581/resourcegroups/MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/useridentity-gateway-prod-aks-druid-us-id
+az network application-gateway identity show -g MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2 --gateway-name prod-appgw-druid-us-aksgw 
+az network application-gateway identity remove -g MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2 --gateway-name prod-appgw-druid-us-aksgw
+
+
+
+
+identityID=$(az identity show -n useridentity-gateway-prod-aks-druid-us-id -g  MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2 -o tsv --query "id")
+
+identityPrincipal=$(az identity show -n useridentity-gateway-prod-aks-druid-us-id -g  MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2 -o tsv --query "principalId")
+
+az role assignment create --role "Managed Identity Operator" --assignee 3919a248-5b98-4bd4-8986-7b32fc78c227  --scope  /subscriptions/0c55596a-1668-492e-b50d-d040372e8581/resourcegroups/MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/useridentity-gateway-prod-aks-druid-us-id
+
+(Probado porque me dice que no tengo permisos)
+az role assignment create --role "Managed Identity Operator" --assignee-object-id 3919a248-5b98-4bd4-8986-7b32fc78c227 --assignee-principal-type Microsoft.ManagedIdentity/userAssignedIdentities --scope /subscriptions/0c55596a-1668-492e-b50d-d040372e8581/resourcegroups/MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/useridentity-gateway-prod-aks-druid-us-id
+
+
+az aks show -n prod-aks-druid-us-id -g prod-rg-druid-us-mainrg --query "addonProfiles.ingressApplicationGateway.identity.resourceId" -o tsv

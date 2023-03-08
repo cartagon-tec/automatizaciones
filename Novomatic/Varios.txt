@@ -1,0 +1,1 @@
+Server=vm-sql.westeu.cloudapp.azure.com;Integrated Security=false;User ID=aminiasin;Password=Mercadona6969

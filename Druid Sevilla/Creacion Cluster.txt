@@ -1,0 +1,36 @@
+az login --tenant  693b95dd-f15c-4e9f-872e-25e93dbd2b39
+
+az account set --subscription 3fb02ce9-e534-4200-a6f3-c549be1d94f9
+
+
+
+az aks create --resource-group AIFans --name aks-druid-eu-pulse --load-balancer-sku standard --network-plugin azure --generate-ssh-keys --node-count 1 --node-vm-size Standard_D2_v5 --vnet-subnet-id /subscriptions/3fb02ce9-e534-4200-a6f3-c549be1d94f9/resourceGroups/AIFans/providers/Microsoft.Network/virtualNetworks/vnet-druid-eu-mainvnet/subnets/subnet-druid-eu-aks --enable-managed-identity
+
+
+az keyvault secret set --vault-name "kv-druid-eu-mainkv" --name "ACTIVEMQ-ADMIN-LOGIN" --value "admin"
+az keyvault secret set --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-ADMIN-PASSWORD" --value "admin_WezAh5wKFNR9n"
+az keyvault secret set --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-READ-LOGIN" --value "consumer_login"
+az keyvault secret set --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-READ-PASSWORD" --value "consumer_43BVe9aXBuRyk5bC"
+az keyvault secret set --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-WRITE-LOGIN" --value "producer_KNnMDvdd5KL5r7zS"
+az keyvault secret set --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-WRITE-PASSWORD" --value "SdxA2nf9oZOw7Jwf7lamsxaoWPVZvb"
+az keyvault secret set --vault-name "aks-druid-eu-pulse" --name "PMS-CLIENT-SECRET" --value "SdxA2nf9oZOw7Jwf7lamsxaoWPVZvb"
+az keyvault secret set --vault-name "aks-druid-eu-pulse" --name "PULSE-MONGO-URI" --value "mongodb+srv://pulse:SlYDTM0xanKpDaXM@prod-mongo-druid-us-pl-1.pkq4t.mongodb.net/master?retryWrites=true&w=majority"
+az keyvault secret set --vault-name "aks-druid-eu-pulse" --name "REWARDS-PASSWORD" --value "fn8F0dgetNPwp7f7HhA7MOjIVWNI1s"
+
+
+az keyvault secret show --vault-name "kv-druid-eu-mainkv" --name "ACTIVEMQ-ADMIN-LOGIN"  --query "value"
+az keyvault secret show --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-ADMIN-PASSWORD"  --query "value"
+az keyvault secret show --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-READ-LOGIN"  --query "value"
+az keyvault secret show --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-READ-PASSWORD"  --query "value"
+az keyvault secret show --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-WRITE-LOGIN"  --query "value"
+az keyvault secret show --vault-name "aks-druid-eu-pulse" --name "ACTIVEMQ-WRITE-PASSWORD"  --query "value"
+az keyvault secret show --vault-name "aks-druid-eu-pulse" --name "PMS-CLIENT-SECRET"  --query "value"
+az keyvault secret show --vault-name "aks-druid-eu-pulse" --name "PULSE-MONGO-URI"  --query "value"
+az keyvault secret show --vault-name "aks-druid-eu-pulse" --name "REWARDS-PASSWORD"  --query "value"
+
+
+
+helm repo add nginx-stable https://helm.nginx.com/stable
+helm repo update
+helm install ingress-nginx nginx-stable/nginx-ingress --create-namespace --namespace ingress-nginx
+
