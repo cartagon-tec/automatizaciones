@@ -1,4 +1,6 @@
+Sacado del siguiente enlace
 
+https://github.com/Azure/application-gateway-kubernetes-ingress/blob/master/docs/features/appgw-ssl-certificate.md
 
 # Configuramos las variables
 identityName="ingressapplicationgateway-aks-druid-eu-test-avc"
