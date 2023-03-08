@@ -1,12 +1,72 @@
-az keyvault create -n druid-eu-mainkv-avc  -g aks-test 
 
-az network vnet subnet show -g aks-test -n subnet-main-aks --vnet-name vnet-avc-aks-test
+# Configuramos las variables
+identityName=""
+appgwName=""
+resgp=""
+resgpaks=""
+vaultName=""
+location=""
+agicIdentityPrincipalId=""
+tenat=""
+suscripcion=""
+location=""
+vnetname=""
+subnetaks=""
+subnetappgw=""
+subnetmongodb=""
+subnetdb=""
+aksname=""
 
-/subscriptions/086123b5-c7ae-4055-8100-578c98be0ed1/resourceGroups/aks-test/providers/Microsoft.Network/virtualNetworks/vnet-avc-aks-test/subnets/subnet-main-aks
 
+#Establecemos el tenant y la subscripcion
+
+az login --tenant  $tenat
+az account set --subscription $suscripcion
+
+#Creamos el grupo de recusos en el que se encotrará el cluster de AKS
+
+az groups create $resgp -l $location
+
+#Activamos los providers necesarios, si estan activados no hará nada
+
+az provider register --namespace Microsoft.OperationsManagement
+az provider register --namespace Microsoft.OperationalInsights
+az provider register --namespace Microsoft.ContainerService
+az provider register --namespace Microsoft.Storage
+az provider register --namespace Microsoft.KeyVault
+az provider register --namespace Microsoft.Network
+az provider register --namespace Microsoft.SaaS
+
+#Instalamos la extension de aks y le hacemos un update
+
+az extension add --name aks-preview
+az extension update --name aks-preview
+
+#En este punto sera necesario crear la BBDD y un usuario de conexion (Pendiente)
+
+#Creamos key vault
+az keyvault create -n $vaultName  -g $resgp
+
+#Creamos la vnet y las redes (elegiremos los prefijos que necesitemos)
+
+az network vnet create -g $resgp -n $vnetname --address-prefix 10.128.32.0/22
+
+az network vnet subnet create -g $resgp  --vnet-name $vnetname -n $subnetaks --address-prefixes 10.128.32.0/24
+
+az network vnet subnet create -g $resgp  --vnet-name $vnetname -n $subnetdb --address-prefixes 10.128.34.0/28
+
+az network vnet subnet create -g $resgp  --vnet-name $vnetname -n $subnetmongodb --address-prefixes 10.128.34.16/28
+
+az network vnet subnet create -g $resgp  --vnet-name $vnetname -n $subnetappgw --address-prefixes 10.128.33.0/28
+
+#vemos el id de la subnet donde queremos que se despliegue aks
+
+subnetid=$(az network vnet subnet show -g $resgp -n s$subnetaks --vnet-name $vnetname) Revisar
+
+#Lanzamos la creacion del cluster (Elegimos esta opcion sin APP Gateway)
 az aks create \
-	--resource-group aks-test \
-	--name aks-druid-eu-test-avc \
+	--resource-group $resgp \
+	--name $aksname \
 	--load-balancer-sku standard \
 	--network-plugin azure \
 	--generate-ssh-keys \
