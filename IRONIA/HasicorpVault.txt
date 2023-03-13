@@ -1,0 +1,7 @@
+Hacer login 
+
+vault login token=token
+
+
+https://vault-public-vault-b65b78fe.fcf5b50c.z1.hashicorp.cloud:8200
+    
