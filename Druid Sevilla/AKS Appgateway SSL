@@ -1,20 +1,26 @@
-Sacado del siguiente enlace
-
+#Sacado del siguiente enlace:
 https://github.com/Azure/application-gateway-kubernetes-ingress/blob/master/docs/features/appgw-ssl-certificate.md
 
+
+
+#usar la suscripcion correcta
+az account set --subscription 0c55596a-1668-492e-b50d-d040372e8581
+
+
 # Configuramos las variables
-identityName="ingressapplicationgateway-aks-druid-eu-test-avc" #creado por AKS cuando se instala el AAGateway
-appgwName="ingress-appgateway"
-resgp="aks-test"
-resgpaks="MC_aks-test_aks-druid-eu-test-avc_westeurope"
-vaultName="druid-eu-mainkv-avc"
+identityName="ingressapplicationgateway-prod-aks-druid-us-id"
+appgwName="prod-appgw-druid-us-aksgw"
+resgp="prod-rg-druid-us-mainrg"
+resgpaks="MC_prod-rg-druid-us-mainrg_prod-aks-druid-us-id_westus2"
+vaultName="prod-kv-druid-us-mainkv"
 location="westeurope"
-agicIdentityPrincipalId="ea46aef5-9ab6-42d7-954c-7e325a77b873"  #id del identityName de Appgateway
-userasigned="appgw-id" #usiario que creamos para asignarlo
+agicIdentityPrincipalId="ea46aef5-9ab6-42d7-954c-7e325a77b873"
+userasigned="appgw-id-prod-aks-druid-us-id"
 
 # cogemos el id del usuario agic ingressaplicationgateway+nombrecluster
-agicIdentityPrincipalId=$(az identity show -n $identityName -g $resgpaks --query principalId --output tsv)
+agicIdentityPrincipalId=$(az identity show --name $identityName -g $resgpaks --query principalId --output tsv)
 
+Da algo parecdio a: 3919a248-5b98-4bd4-8986-7b32fc78c227
 
 # Creamos el key vualt
 az keyvault create -n $vaultName -g $resgp --enable-soft-delete -l $location
@@ -22,10 +28,16 @@ az keyvault create -n $vaultName -g $resgp --enable-soft-delete -l $location
 # Creamos un usuario asignado
 az identity create -n $userasigned -g $resgp -l $location
 identityID=$(az identity show -n $userasigned -g $resgp -o tsv --query "id")
+Da algo parecido a: /subscriptions/0c55596a-1668-492e-b50d-d040372e8581/resourcegroups/prod-rg-druid-us-mainrg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/appgw-id-prod-aks-druid-us-id
+
 identityPrincipal=$(az identity show -n $userasigned -g $resgp -o tsv --query "principalId")
+Da algo parecido a: 9a8ad360-f440-44ad-8397-c7740674d40d
 
 # Le asingamos el role a la identidad necesaria del agic usuario
 az role assignment create --role "Managed Identity Operator" --assignee $agicIdentityPrincipalId --scope $identityID
+
+
+az role assignment create --role "Managed Identity Operator" --assignee 3919a248-5b98-4bd4-8986-7b32fc78c227 --scope /subscriptions/0c55596a-1668-492e-b50d-d040372e8581/resourcegroups/prod-rg-druid-us-mainrg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/appgw-id-prod-aks-druid-us-id
 
 # Asignamos la nueva identidad a al app gateway
 az network application-gateway identity assign \
